@@ -1,0 +1,39 @@
+{
+    "name": "color-rabbit/pdf-watermarker",
+    "description": "pdf",
+    "keywords": ["pdf", "watermarker"],
+    "license": "MIT",
+    "homepage": "https://github.com/ColorRabbit/pdfWatermarker",
+    "type": "library",
+    "autoload": {
+        "psr-4": {
+            "PpfWatermarker\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "PdfWatermarker\\Tests\\": "tests/"
+        }
+    },
+    "require": {
+        "php": ">=7.0",
+        "ext-exif": "*",
+        "ext-gd": "*",
+        "setasign/fpdi-fpdf": "^2.1"
+    },
+    "require-dev": {
+    },
+    "minimum-stability": "dev",
+    "extra": {
+        "branch-alias": {
+            "dev-master": "0.1.0-dev"
+        }
+    },
+    "authors": [
+        {
+            "name": "ColorRabbit",
+            "email": "1375271992@qq.com"
+        }
+    ]
+}
+
