@@ -7,7 +7,7 @@
     "type": "library",
     "autoload": {
         "psr-4": {
-            "PpfWatermarker\\": "src/"
+            "PdfWatermarker\\": "src/"
         }
     },
     "autoload-dev": {
