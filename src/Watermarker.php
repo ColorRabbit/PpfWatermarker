@@ -2,143 +2,36 @@
 
 namespace PdfWatermarker;
 
-class Watermarker
+use setasign\Fpdi\Fpdi;
+
+class Watermarker extends AbWatermarker
 {
-    /**
-     * @var
-     */
-    private $newPdf;
+    use Watermark;
 
-    /**
-     * @var
-     */
-    private $originalPdf;
-
-    /**
-     * @var
-     */
-    private $tempPdf;
-
-    /**
-     * @var
-     */
-    private $watermark;
-
-    /**
-     * @var string
-     */
-    private $imagePositionOutput = 'center';
-
-    /**
-     * @var boolean
-     */
-    private $replaceOriginal = false;
-
-    /**
-     * Watermarker constructor.
-     */
     public function __construct()
     {
-    }
-
-    /**
-     * @return
-     */
-    public function getTempPdf()
-    {
-        return $this->tempPdf;
-    }
-
-    /**
-     * @param $tempPdf
-     *
-     * @return Watermarker
-     */
-    public function setTempPdf($tempPdf): Watermarker
-    {
-        $this->tempPdf = $tempPdf;
-
-        return $this;
+        $this->setFpdi(new Fpdi());
     }
 
     /**
      * @return mixed
+     * @throws \Exception
      */
-    public function getOriginalPdf()
+    public function watermarkPdf()
     {
-        return $this->originalPdf;
-    }
+        $this->validateAssets();
+        $this->watermarkWholePdf();
+        if ($this->isReplaceOriginal() && file_exists($this->getOriginalPdf())) {
+            try {
+                @chmod($this->getOriginalPdf(), 0777);
+                @unlink($this->getOriginalPdf());
+                $this->setNewPdf($this->getOriginalPdf());
+            } catch (\Exception $e) {
+                throw new \Exception('No permission to replace file');
+            }
+        }
 
-    /**
-     * @param mixed $originalPdf
-     *
-     * @return Watermarker
-     */
-    public function setOriginalPdf($originalPdf)
-    {
-        $this->originalPdf = $originalPdf;
-
-        return $this;
-    }
-
-    /**
-     * @return mixed
-     */
-    public function getNewPdf()
-    {
-        return $this->newPdf;
-    }
-
-    /**
-     * @param mixed $newPdf
-     *
-     * @return Watermarker
-     */
-    public function setNewPdf($newPdf)
-    {
-        $this->newPdf = $newPdf;
-
-        return $this;
-    }
-
-    /**
-     * @return mixed
-     */
-    public function getWatermark()
-    {
-        return $this->watermark;
-    }
-
-    /**
-     * @param mixed $watermark
-     *
-     * @return Watermarker
-     */
-    public function setWatermark($watermark)
-    {
-        $this->watermark = $watermark;
-
-        return $this;
-    }
-
-    /**
-     * @return mixed
-     */
-    public function getReplaceOriginal()
-    {
-        return $this->replaceOriginal;
-    }
-
-    /**
-     * @param mixed $replaceOriginal
-     *
-     * @return Watermarker
-     */
-    public function setReplaceOriginal($replaceOriginal)
-    {
-        $this->replaceOriginal = $replaceOriginal;
-
-        return $this;
+        return $this->getFpdi()->Output('F', $this->getNewPdf());
     }
 
     /**
@@ -146,109 +39,82 @@ class Watermarker
      */
     private function validateAssets()
     {
-        if ( ! file_exists($this->originalPdf)) {
+        if ( ! file_exists($this->getOriginalPdf())) {
             throw new \Exception("Inputted PDF file doesn't exist");
-        } elseif ( ! file_exists($this->watermark->getWatermarkFile())) {
+        } elseif ( ! file_exists($this->getWatermarkFile())) {
             throw new \Exception("Watermark doesn't exist.");
         }
     }
 
     /**
-     * $position string -  'center','topright', 'topleft', 'bottomright', 'bottomleft'
+     * @throws \Exception
      */
-    // public function setWatermarkPosition($position)
-    // {
-    //     switch ($position) {
-    //         case 'topright':
-    //         case 'topleft':
-    //         case 'bottomright':
-    //         case 'bottomleft':
-    //             $this->imagePositionOutput = $position;
-    //             break;
-    //         default:
-    //             $this->imagePositionOutput = 'center';
-    //     }
-    // }
-
     private function watermarkWholePdf()
     {
-        $pageCtr = $this->tempPdf->setSourceFile($this->originalPdf);
+        $pageCtr = $this->getFpdi()->setSourceFile($this->getOriginalPdf());
         for ($ctr = 1; $ctr <= $pageCtr; $ctr++) {
             $this->watermarkPage($ctr);
         }
     }
 
+    /**
+     * @param $pageNumber
+     *
+     * @throws \Exception
+     */
     private function watermarkPage($pageNumber)
     {
-        $templateId = $this->tempPdf->importPage($pageNumber);
-        $templateDimension = $this->tempPdf->getTemplateSize($templateId);
+        $templateId = $this->getFpdi()->importPage($pageNumber);
+        $templateDimension = $this->getFpdi()->getTemplateSize($templateId);
         if ($templateDimension['width'] > $templateDimension['height']) {
             $orientation = 'L';
         } else {
             $orientation = 'P';
         }
 
-        $this->tempPdf->addPage($orientation, array($templateDimension['width'], $templateDimension['height']));
-        $this->tempPdf->useTemplate($templateId);
+        $this->getFpdi()->addPage($orientation, array($templateDimension['width'], $templateDimension['height']));
+        $this->getFpdi()->useTemplate($templateId);
 
-        $wWidth = ($this->watermark->getWatermarkImageWidth() / 96) * 25.4; //in mm
-        $wHeight = ($this->watermark->getWatermarkImageHeight() / 96) * 25.4; //in mm
+        $wWidth = ($this->getWatermarkImageWidth() / 96) * 25.4; //in mm
+        $wHeight = ($this->getWatermarkImageHeight() / 96) * 25.4; //in mm
 
-        $watermarkPosition = $this->determineWatermarkPosition($wWidth,
-            $wHeight,
-            $templateDimension['width'],
-            $templateDimension['height']);
-        $this->tempPdf->Image($this->watermark->getWatermarkFile(), $watermarkPosition[0], $watermarkPosition[1], -96);
-    }
+        $watermarkPosition = $this->determineWatermarkPosition($wWidth, $wHeight, $templateDimension['width'], $templateDimension['height']);
 
-    private function determineWatermarkPosition($wWidth, $wHeight, $tWidth, $tHeight)
-    {
-
-        switch ($this->imagePositionOutput) {
-            case 'topleft':
-                $x = 0;
-                $y = 0;
-                break;
-            case 'topright':
-                $x = $tWidth - $wWidth;
-                $y = 0;
-                break;
-            case 'bottomright':
-                $x = $tWidth - $wWidth;
-                $y = $tHeight - $wHeight;
-                break;
-            case 'bottomleft':
-                $x = 0;
-                $y = $tHeight - $wHeight;
-                break;
-            default:
-                $x = ($tWidth - $wWidth) / 2;
-                $y = ($tHeight - $wHeight) / 2;
-                break;
-        }
-
-        return array($x, $y);
+        $this->getFpdi()->Image($this->getWatermarkFile(), $watermarkPosition[0], $watermarkPosition[1], -96);
     }
 
     /**
-     * @return string
+     * @param $wWidth
+     * @param $wHeight
+     * @param $tWidth
+     * @param $tHeight
+     *
+     * @return array
      * @throws \Exception
      */
-    public function watermarkPdf()
+    private function determineWatermarkPosition($wWidth, $wHeight, $tWidth, $tHeight)
     {
-        $this->validateAssets();
-        $this->watermarkWholePdf();
-        if ($this->replaceOriginal && file_exists($this->originalPdf)) {
-            try {
-                @chmod($this->originalPdf, 0777);
-                @unlink($this->originalPdf);
-                $this->newPdf = $this->originalPdf;
-            } catch (\Exception $e) {
-                throw new \Exception('No permission to replace file');
-            }
+        if ($this->getImagePosition() === self::TOP_LEFT) {
+            return [0, 0];
         }
 
-        return $this->tempPdf->Output('F', $this->newPdf);
+        if ($this->getImagePosition() === self::TOP_RIGHT) {
+            return [$tWidth - $wWidth, 0];
+        }
+
+        if ($this->getImagePosition() === self::BOTTOM_RIGHT) {
+            return [$tWidth - $wWidth, $tHeight - $wHeight];
+        }
+
+        if ($this->getImagePosition() === self::BOTTOM_LEFT) {
+            return [0, $tHeight - $wHeight];
+        }
+
+        if ($this->getImagePosition() === self::CENTER) {
+            return [($tWidth - $wWidth) / 2, ($tHeight - $wHeight) / 2];
+        }
+
+        throw new \Exception('Position not exists.');
     }
 
 

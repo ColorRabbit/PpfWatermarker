@@ -3,10 +3,10 @@
 namespace PdfWatermarker;
 
 /**
- * Class Watermark
+ * Trait Watermark
  * @package PdfWatermarker
  */
-class Watermark
+trait Watermark
 {
     /**
      * @var
@@ -39,10 +39,10 @@ class Watermark
     /**
      * @param string $watermarkFile
      *
-     * @return Watermark
+     * @return $this
      * @throws \Exception
      */
-    public function setWatermarkFile(string $watermarkFile): Watermark
+    public function setWatermarkFile(string $watermarkFile)
     {
         $this->watermarkFile = $this->prepareWatermarkImage($watermarkFile);
         $imageSize = getimagesize($this->watermarkFile);
@@ -90,10 +90,9 @@ class Watermark
         if ( ! file_exists($file)) {
             throw new \Exception("Watermark doesn't exist.");
         }
-        $imagetype = exif_imagetype($file);
+        $imageType = exif_imagetype($file);
 
-        switch ($imagetype) {
-
+        switch ($imageType) {
             case IMAGETYPE_JPEG:
                 $image = imagecreatefromjpeg($file);
                 $path = sys_get_temp_dir() . '/' . uniqid() . '.jpg';
@@ -110,6 +109,7 @@ class Watermark
                 imagepng($image, $path);
                 imagedestroy($image);
                 break;
+
             default:
                 throw new \Exception("Unsupported image type");
                 break;
