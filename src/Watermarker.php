@@ -39,9 +39,10 @@ class Watermarker extends AbWatermarker
      */
     private function validateAssets()
     {
-        if ( ! file_exists($this->getOriginalPdf())) {
+        if (!file_exists($this->getOriginalPdf())) {
             throw new \Exception("Inputted PDF file doesn't exist");
-        } elseif ( ! file_exists($this->getWatermarkFile())) {
+        }
+        if (!file_exists($this->getWatermarkFile())) {
             throw new \Exception("Watermark doesn't exist.");
         }
     }

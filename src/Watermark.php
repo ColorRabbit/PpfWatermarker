@@ -9,22 +9,22 @@ namespace PdfWatermarker;
 trait Watermark
 {
     /**
-     * @var
+     * @var $watermarkFile
      */
     private $watermarkFile;
 
     /**
-     * @var
+     * @var $watermarkImageWidth
      */
     private $watermarkImageWidth;
 
     /**
-     * @var
+     * @var $watermarkImageHeight
      */
     private $watermarkImageHeight;
 
     /**
-     * @var
+     * @var $watermarkImageMime
      */
     private $watermarkImageMime;
 
@@ -87,7 +87,7 @@ trait Watermark
     private function prepareWatermarkImage($file)
     {
 
-        if ( ! file_exists($file)) {
+        if (!file_exists($file)) {
             throw new \Exception("Watermark doesn't exist.");
         }
         $imageType = exif_imagetype($file);
