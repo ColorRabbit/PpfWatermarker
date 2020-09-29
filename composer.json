@@ -27,7 +27,7 @@
     "minimum-stability": "RC",
     "extra": {
         "branch-alias": {
-            "dev-master": "0.2.0-dev"
+            "dev-master": "0.3.0"
         }
     },
     "authors": [
